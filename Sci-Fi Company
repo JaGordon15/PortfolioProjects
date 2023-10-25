@@ -1,0 +1,410 @@
+/* This SQL Project is three parts
+First I will outline the Sci-Fi Company project with comments 
+Then I will be creating tables that have Primary and Foreign keys related to each other, while filling them out
+And lastly I will be querying the tables I have created
+*/
+
+
+/*
+-- Sci-Fi Company Project
+•	The company is organized into 6 departments. Each department has a unique number, name, and a manager
+•	The company makes its money buy selling products to clients. Each client has a name and unique number.
+•	The company is made up of staff. Each staff has a name, birthday, sex, salary, unique number.
+•	A staff can work for one department at a time and each department will be managed by one of the staff that work in that department. We will keep track of the current manager and their start date
+•	A staff can act as a supervisor for other staffs at the department, a staff may also act as the supervisor for staffs at other departments. A staff can have at most one supervisor
+•	A staff can also act as a rival to another staff. A staff can have one rival but the relationship does not need to be one to one. Meaning a staff can be someone’s rival but not have a rival.
+•	A department may handle a number of clients, with each client having a name and unique number to identify it. A single client may only be handled by one department at a time
+•	Staffs can work with clients controlled by their department to sell them product. If necessary multiple staffs can work with the same client. We’ll want to keep track of how much money each staff sells to each client they work with
+•	Many departments will need to work with suppliers to buy their inventory. For each supplier we’ll keep track of their name and the type of product they’re selling the department. A single supplier may supply products to multiple departments.
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- Creating the tables
+
+CREATE TABLE staff(
+    staff_id INT,
+    first_name VARCHAR(20),
+    last_name VARCHAR(20),
+    sex VARCHAR (15),
+    salary INT,
+    birthday DATE,
+    department_id INT,
+    supervisor_id INT,
+    rival_id INT,
+    PRIMARY KEY (staff_id)
+);
+
+CREATE TABLE department (
+    department_id INT,
+    department_name VARCHAR(20),
+    mgr_start_date DATE,
+    mgr_id INT,
+    PRIMARY KEY (department_id),
+    FOREIGN KEY (mgr_id) REFERENCES staff (staff_id) ON DELETE SET NULL
+);
+
+-- Now that all the attributes have been made that are foreign keys for the staff table lets add the staffs foreign keys
+
+ALTER TABLE staff
+ADD FOREIGN KEY (department_id) REFERENCES department (department_id);
+
+ALTER TABLE staff 
+ADD FOREIGN KEY (supervisor_id) REFERENCES staff (staff_id);
+
+ALTER TABLE staff 
+ADD FOREIGN KEY (rival_id) REFERENCES staff (staff_id);
+
+-- now we will go back to creating the other tables 
+
+CREATE TABLE client(
+    client_id INT,
+    client_name VARCHAR(20),
+    department_id INT,
+    PRIMARY KEY (client_id),
+    FOREIGN KEY (department_id) REFERENCES department (department_id) ON DELETE SET NULL
+);
+
+CREATE TABLE supplier(
+    department_id INT,
+    supplier_name VARCHAR(30),
+    product_type VARCHAR (30),
+    PRIMARY KEY (department_id, supplier_name),
+    FOREIGN KEY (department_id) REFERENCES department (department_id) ON DELETE CASCADE
+);
+
+CREATE TABLE works_with(
+    staff_id INT,
+    client_id INT,
+    sales INT,
+    PRIMARY KEY (staff_id, client_id),
+    FOREIGN KEY (staff_id) REFERENCES staff (staff_id),
+    FOREIGN KEY (client_id) REFERENCES client (client_id)
+);
+
+-- All tables have now been created we will now add all the data to them from our 'database'
+
+-- Due to the ciricular relation between the department and staff table we will be adding the managers first, without their department_id. 
+-- Then create that department and alter the managers to have their department_id, we also can not add any rivals if they do not exist yet.
+
+
+INSERT INTO staff VALUES (1, 'Darth', 'Vader', 'Male', 100000, '1967-11-17', NULL, NULL, NULL);
+
+INSERT INTO department VALUES (101, 'Empire', '2000-05-15', 1);
+
+UPDATE staff
+SET department_id = 101
+WHERE staff_id = 1;
+-- Vader created, needs rival added later
+
+INSERT INTO staff VALUES (2, 'Bruce', 'Wayne', 'Male', 120000, '1990-04-23', NULL, NULL, NULL);
+
+INSERT INTO department VALUES (102, 'Wayne Enterprises', '2001-07-01', 2);
+
+UPDATE staff
+SET department_id = 102
+WHERE staff_id = 2;
+-- Bruce Wayne done, no rival listed
+
+INSERT INTO staff VALUES (3, 'Michael', 'Scott', 'Male', 90000, '1964-03-15', NULL, NULL, NULL);
+
+INSERT INTO department VALUES (103, 'Scranton', '1992-04-06', 3);
+
+UPDATE staff  
+SET department_id = 103
+WHERE staff_id = 3;
+-- Michael Scott done, no rival listed
+
+INSERT INTO staff VALUES (4, 'Leia', 'Organa', 'Female', 100000, '1993-12-12', NULL, NULL, 1);
+
+INSERT INTO department VALUES (104, 'Rebels', '2015-03-04', 4);
+
+UPDATE staff 
+SET department_id = 104
+WHERE staff_id = 4;
+-- Leia is done and her rival was added
+
+INSERT INTO staff VALUES (5, 'Sarah', 'Connor', 'Female', 100000, '1984-10-26', NULL, NULL, NULL);
+
+INSERT INTO department VALUES (105, 'Mercenaries', '2014-10-11', 5);
+
+UPDATE staff
+SET department_id = 105
+WHERE staff_id = 5;
+-- Sarah is done, no rival listed
+
+INSERT INTO staff VALUES (6, 'Mario', NULL, 'Male', 25000, '1985-09-13', NULL, NULL, NULL);
+
+INSERT INTO department VALUES (106, 'Randoms', '2020-06-30', 6);
+
+UPDATE staff
+SET department_id = 106
+WHERE staff_id = 6;
+-- Mario is done, now lets add vaders rival 
+
+UPDATE staff 
+SET rival_id = 4
+WHERE staff_id = 1;
+
+SELECT * 
+FROM staff;
+
+SELECT *
+FROM department;
+
+----------------------------- ALL managers have been fully created and all departments have been fully created -----------------------------
+
+-- We will be filling in the staff table now and add any rivals that are not able to be made at creation, at the end
+
+INSERT INTO staff VALUES (7, 'Boba', 'Fett', 'Male', 75000, '1989-12-12', 101, 1, NULL);
+INSERT INTO staff VALUES (8, 'Kylo', 'Ren', 'Male', 50000, '2000-01-01', 101, 1, NULL);
+INSERT INTO staff VALUES (9, 'Clark', 'Kent', 'Male', 76000, '1992-08-09', 102, 2, NULL);
+INSERT INTO staff VALUES (10, 'Diana', NULL, 'Female', 76000, '1993-07-15', 102, 2, 8);
+INSERT INTO staff VALUES (11, 'Barry', 'Allen', 'Male', 76000, '2000-02-22', 102, 2, NULL);
+INSERT INTO staff VALUES (12, 'Angela', 'Martin', 'Female', 63000, '1971-06-25', 103, 3, NULL);
+INSERT INTO staff VALUES (13, 'Stanely', 'Hudson', 'Male', 69000, '1958-02-19', 103, 3, NULL);
+INSERT INTO staff VALUES (14, 'Jim', 'Halpert', 'Male', 71000, '1978-10-01', 103, 3, NULL);
+INSERT INTO staff VALUES (15, 'Ahsoka', 'Tano', 'Female', 78000, '1999-05-05', 104, 4, 1);
+INSERT INTO staff VALUES (16, 'Rey', 'Skywalker', 'Female', 70000, '2000-02-14', 104, 4, 8);
+INSERT INTO staff VALUES (17, 'Luke', 'Skywalker', 'Male', 70000, '1993-12-12', 104, 4, NULL);
+INSERT INTO staff VALUES (18, 'Master', 'Chief', 'Male', 80000, '2001-11-15', 105, 5, NULL);
+INSERT INTO staff VALUES (19, 'T-800', NULL, 'Unspecified', 50000, '2016-08-29', 105, 5, 18);
+INSERT INTO staff VALUES (20, 'The', 'Predator', 'Unspecified', 75000, '1987-06-12', 105, 5, 18);
+INSERT INTO staff VALUES (21, 'Son', 'Goku', 'Male', 0, '1989-04-26', 106, 6, NULL);
+INSERT INTO staff VALUES (22, 'Dwayne', 'Johnson', 'Male', 120000, '1972-05-02', 106, 6, NULL);
+INSERT INTO staff VALUES (23, 'Hermione', 'Granger', 'Female', 60000, '1979-09-19', 106, 6, 12);
+INSERT INTO staff VALUES (24, 'Commander', 'Shepard', 'Female', 90000, '1987-07-09', 106, 6, 18);
+
+SELECT * 
+FROM staff;
+
+--------------------- staff and department tables are done ----------------------------------------
+
+INSERT INTO client VALUES (500, 'Justice League', 102);
+INSERT INTO client VALUES (501, 'Dunmore Highschool', 103);
+INSERT INTO client VALUES (502, 'Quartzhill Highschool', 104);
+ALTER TABLE client MODIFY COLUMN client_name VARCHAR (30); -- had to modify client_name length so client 502 would fit
+INSERT INTO client VALUES (503, 'CSUN', 106);
+INSERT INTO client VALUES (504, 'Daily Planet', 105);
+INSERT INTO client VALUES (505, 'USMC', 106);
+INSERT INTO client VALUES (506, 'Planet Express', 102);
+INSERT INTO client VALUES (507, 'Cerverus', 105);
+INSERT INTO client VALUES (508, 'Jurassic World', 101);
+
+---------------- client table is filled in ------------------------------
+
+INSERT INTO supplier VALUES (106, 'Umbrella Corporation', 'Medical Supplies');
+INSERT INTO supplier VALUES (105, 'Stark Industries', 'Property Security');
+INSERT INTO supplier VALUES (104, 'Starship Enterprises', 'Complex Machinery');
+INSERT INTO supplier VALUES (103, 'New York Water Supply', 'Water Goods');
+INSERT INTO supplier VALUES (102, 'Hawkins Power & Light', 'Energy and Lighting');
+INSERT INTO supplier VALUES (101, 'Axon Corporation', 'Food');
+
+--------------- supplier table done ---------------------------------------
+
+INSERT INTO works_with VALUES (21,503,26221);
+INSERT INTO works_with VALUES (13,501,44447); -- error will need to figure out
+INSERT INTO works_with VALUES (18,507,22351);
+INSERT INTO works_with VALUES (12,501,29503); -- error
+INSERT INTO works_with VALUES (22,503,42714);
+INSERT INTO works_with VALUES (23,505,40564);
+INSERT INTO works_with VALUES (24,503,17062);
+INSERT INTO works_with VALUES (14,501,24764); -- error
+INSERT INTO works_with VALUES (10,506,27867);
+INSERT INTO works_with VALUES (22,505,34047);
+INSERT INTO works_with VALUES (11,500,24110);
+INSERT INTO works_with VALUES (17,502,28372);
+INSERT INTO works_with VALUES (21,505,21398);
+INSERT INTO works_with VALUES (18,504,35778);
+INSERT INTO works_with VALUES (24,505,21793); -- error
+INSERT INTO works_with VALUES (20,504,29968);
+INSERT INTO works_with VALUES (8,508,37113);
+
+--Neeed to try to figure out why Dunmore highschool is not taking works with entries
+
+SELECT *
+FROM client; -- saw Dunmore highschool was not added into table. Added them and entered most errors except line 197
+
+-- line 197 error, changed 21 to 24. Error resolved
+
+-------------------------------WIth that all the tables have been created and we can move onto querying ----------------------------------
+
+
+
+
+-- I will have these up here to view all the tables at any time
+SELECT * 
+FROM staff;
+
+SELECT *
+FROM department;
+
+SELECT *
+FROM client;
+
+SELECT * 
+FROM supplier;
+
+SELECT * 
+FROM works_with;
+
+----------------------------------------------------------------------------------------------------
+
+-- start with some work regarding the sex of our staff
+-- first see what are the possible sex's then change them to first letter
+
+SELECT DISTINCT (sex)
+FROM staff;
+
+UPDATE staff 
+SET sex = 'M'
+WHERE sex = 'Male';
+
+UPDATE staff 
+SET sex = 'F'
+WHERE sex = 'Female';
+
+UPDATE staff
+SET sex = 'U'
+WHERE sex = 'Unspecified';
+
+SELECT COUNT (sex), sex
+FROM staff
+GROUP BY sex;
+
+-------------------------------------------------------------------------------------------------
+
+-- Lets find the average salary of all employess then divide it by sex
+
+SELECT AVG(salary)
+FROM staff;  -- average salary is 74,33.3333333
+
+SELECT AVG(salary)
+FROM staff
+WHERE sex = 'M';  -- average male salary is 73,000
+
+SELECT AVG(salary)
+FROM staff
+WHERE sex = 'F';  -- average female salary is 79,625.00
+
+SELECT AVG (salary)
+FROM staff
+WHERE sex = 'U';  -- average unspecified salary is 62,500.00
+
+-- lets find the names of all the employees making under there sex's average 
+
+SELECT first_name, last_name, staff_id, salary
+FROM staff 
+WHERE sex = 'M' AND salary < (
+    SELECT AVG(salary)
+    FROM staff
+    WHERE sex = 'M');  -- from this data we see staff_id 9 has 0 salary and could be an issue we address
+
+SELECT first_name, last_name, staff_id, salary
+FROM staff 
+WHERE sex = 'F' AND salary < (
+    SELECT AVG(salary)
+    FROM staff
+    WHERE sex = 'F');  -- no outliers but we can note Hermione is the lowest paid female
+
+--------------------------------------------------------------------------------------------------
+
+-- Find all info on clients that have school in their name
+
+SELECT *
+FROM client
+WHERE client_name LIKE '%school%';
+
+-- find all the employees born in February
+
+SELECT first_name, last_name, birthday
+FROM staff
+WHERE birthday LIKE '%-02-%';
+
+----------------------------------------------------------
+
+--Find the info for all staff that have made a sale and show the most sales first
+
+SELECT staff.staff_id, staff.first_name, staff.last_name, works_with.sales 
+FROM staff 
+JOIN works_with
+ON staff.staff_id = works_with.staff_id 
+ORDER BY sales DESC;
+
+--------------------------------------------------------
+
+-- Give the name of all staff, departments, clients, and suppliers
+
+SELECT first_name AS 'All Names'
+FROM staff
+UNION
+SELECT department_name
+FROM department
+UNION
+SELECT client_name
+FROM client 
+UNION
+SELECT supplier_name
+FROM supplier;
+
+-- Union would be more helpful if we had previous sales data and we could union those two tables
+
+----------------------------------------------------------
+
+-- Find total expenses and total income
+
+SELECT SUM (salary) AS 'Total Expenses'
+FROM staff;
+
+SELECT SUM (sales) AS 'Total Income'
+FROM works_with; 
+
+----------------------------------------------------------
+
+--Find which staff are managers and give their names and salaries
+
+SELECT first_name, last_name, salary
+FROM staff
+JOIN department
+WHERE staff_id = mgr_id;
+
+-- find the birthday and name of all the managers
+
+SELECT birthday, first_name, last_name  -- why does this not work? 
+FROM staff
+WHERE salary > 30000 IN (
+    SELECT salary
+    FROM staff
+    JOIN department
+    WHERE staff.staff_id = department.mgr_id
+);
+
+SELECT birthday, first_name, last_name  --why does this not work either?
+FROM staff
+WHERE first_name <> NULL IN (
+    SELECT first_name
+    FROM staff
+    JOIN department
+    WHERE staff.staff_id = department.mgr_id
+);
+
+---------------------------------------------------------------
+
+-- Order how much money each client spent per transaction 
+
+SELECT client.client_name, works_with.sales
+FROM client
+JOIN works_with
+ON client.client_id = works_with.client_id
+ORDER BY sales DESC;
